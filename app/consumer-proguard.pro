@@ -1,0 +1,2 @@
+-keep class com.rayole.offerpro.sdk.** { *; }
+-dontwarn javax.annotation.**
