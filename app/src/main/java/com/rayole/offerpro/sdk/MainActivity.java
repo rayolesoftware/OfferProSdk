@@ -108,12 +108,12 @@ public class MainActivity extends Activity {
 
     /** Only load if the URL we SHOULD be on (based on integrity) differs from what we last loaded. */
     private void loadWithIntegrityIfChanged() {
-//            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
-//            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
-//            if (!TextUtils.equals(desired, initialUrl)) {
-//                webView.loadUrl(desired);
-//                // lastLoadedUrl will be updated in onPageFinished
-//            }
+            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
+            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
+            if (!TextUtils.equals(desired, initialUrl)) {
+                webView.loadUrl(desired);
+                // lastLoadedUrl will be updated in onPageFinished
+            }
             webView.loadUrl(initialUrl);
     }
 

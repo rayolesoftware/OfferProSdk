@@ -1,9 +1,2 @@
 jdk:
   - openjdk17
-
-android:
-  components:
-    - build-tools-35.0.0
-    - android-35
-    - extra-google-m2repository
-    - extra-android-m2repository
