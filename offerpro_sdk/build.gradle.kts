@@ -25,7 +25,10 @@ android {
     }
 
     publishing {
-        singleVariant("release")
+        singleVariant("release") {
+            withSourcesJar()      // <— this creates OfferProSdk-vX.Y.Z-sources.jar
+            // withJavadocJar()   // optional; requires Dokka/javadoc setup if you want it
+        }
     }
 }
 
@@ -40,7 +43,7 @@ publishing {
         create<MavenPublication>("release") {
             afterEvaluate { from(components["release"]) }
             groupId = project.group.toString()      // e.g., com.github.rayolesoftware
-            artifactId = "offerpro-sdk"
+            artifactId = "OfferProSdk"
             version = project.version.toString()
         }
     }

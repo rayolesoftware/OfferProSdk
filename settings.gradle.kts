@@ -19,4 +19,4 @@ rootProject.name = "OfferProSdk"
 
 // Map module name → folder name (your folder is underscore)
 include(":offerpro-sdk")
-project(":offerpro-sdk").projectDir = file("app")
+project(":offerpro-sdk").projectDir = file("offerpro_sdk")
