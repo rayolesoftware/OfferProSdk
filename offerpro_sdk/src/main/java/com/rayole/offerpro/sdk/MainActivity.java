@@ -40,7 +40,10 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String initialUrl;         // first page, used ONLY on cold start
     private boolean firstLoadDone = false;
-    private boolean pendingExternalNav = false; // set true before leaving app
+    private boolean pendingFilePicker  = false; // ← add this
+    private String lastLoadedUrl = null;        // track what’s on screen
+    // Used to skip reloads when returning from external intents (Play Store, file chooser, etc.)
+    private boolean pendingExternalNav = false;
 
     // for file chooser
     private ValueCallback<Uri[]> filePathCallback;
@@ -95,6 +98,7 @@ public class MainActivity extends Activity {
         }
     }
 
+
     /** Don’t reload onResume – this preserves the page when returning from Play Store. */
     @Override protected void onResume() {
         super.onResume();
@@ -103,17 +107,19 @@ public class MainActivity extends Activity {
             pendingExternalNav = false;
             return;
         }
-        loadWithIntegrityIfChanged();
+//        loadWithIntegrityIfChanged();
     }
+
+
 
     /** Only load if the URL we SHOULD be on (based on integrity) differs from what we last loaded. */
     private void loadWithIntegrityIfChanged() {
-            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
-            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
-            if (!TextUtils.equals(desired, initialUrl)) {
-                webView.loadUrl(desired);
-                // lastLoadedUrl will be updated in onPageFinished
-            }
+//            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
+//            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
+//            if (!TextUtils.equals(desired, initialUrl)) {
+//                webView.loadUrl(desired);
+//                // lastLoadedUrl will be updated in onPageFinished
+//            }
             webView.loadUrl(initialUrl);
     }
 
@@ -133,24 +139,31 @@ public class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == 10001) {
             if (filePathCallback == null) return;
-            Uri[] result = null;
-            if (resultCode == RESULT_OK) {
-                if (data == null) {
-                    // Capture from camera fallback – ignore here unless you add camera intent
-                } else {
-                    Uri uri = data.getData();
-                    if (uri != null) result = new Uri[] { uri };
-                    else if (data.getClipData() != null) {
-                        ClipData clip = data.getClipData();
-                        result = new Uri[clip.getItemCount()];
-                        for (int i = 0; i < clip.getItemCount(); i++) result[i] = clip.getItemAt(i).getUri();
+
+            Uri[] uris = null;
+            if (resultCode == RESULT_OK && data != null) {
+                if (data.getClipData() != null) {
+                    final int n = data.getClipData().getItemCount();
+                    uris = new Uri[n];
+                    for (int i = 0; i < n; i++) {
+                        uris[i] = data.getClipData().getItemAt(i).getUri();
                     }
+                } else if (data.getData() != null) {
+                    uris = new Uri[]{ data.getData() };
                 }
             }
-            filePathCallback.onReceiveValue(result);
+
+            // Always complete the callback — this prevents reloads on many OEMs
+            filePathCallback.onReceiveValue(uris);
             filePathCallback = null;
+
+            // We just returned from external UI; ensure no reload on resume paths
+            // (onResume will run after this; the pendingExternalNav flag is still true,
+            // and onResume will skip any loadUrl)
+            return;
         }
     }
 
@@ -211,8 +224,10 @@ public class MainActivity extends Activity {
         }
 
         private void openExternal(Uri uri) {
-            try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); }
-            catch (ActivityNotFoundException e) {
+            try {
+                pendingExternalNav = true; // ← ADD THIS
+                startActivity(new Intent(Intent.ACTION_VIEW, uri));
+            } catch (ActivityNotFoundException e) {
                 Log.w(TAG, "No handler for " + uri, e);
             }
         }
@@ -226,8 +241,10 @@ public class MainActivity extends Activity {
             tmp.setWebViewClient(new WebViewClient() {
                 @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
                     // Open new windows externally like a browser would
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
-                    catch (ActivityNotFoundException ignore) {}
+                    try {
+                        pendingExternalNav = true; // ← ADD THIS
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    } catch (ActivityNotFoundException ignore) {}
                     return true;
                 }
             });
@@ -252,12 +269,31 @@ public class MainActivity extends Activity {
 
         // File chooser for <input type="file">
         @Override public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+            // Close any previous pending callback to avoid OEM reload quirks
+            if (MainActivity.this.filePathCallback != null) {
+                MainActivity.this.filePathCallback.onReceiveValue(null);
+            }
             MainActivity.this.filePathCallback = filePathCallback;
-            Intent intent = fileChooserParams.createIntent();
+
+            Intent chooserIntent;
             try {
-                startActivityForResult(intent, 10001);
-            } catch (ActivityNotFoundException e) {
+                chooserIntent = fileChooserParams.createIntent();
+            } catch (Exception e) {
+                // Complete callback even on failure
+                MainActivity.this.filePathCallback.onReceiveValue(null);
                 MainActivity.this.filePathCallback = null;
+                return false;
+            }
+
+            try {
+                // IMPORTANT: Mark that we’re leaving the app to an external picker
+                pendingExternalNav = true;
+                startActivityForResult(chooserIntent, 10001);
+            } catch (ActivityNotFoundException e) {
+                // Gracefully fail, do NOT reload page
+                MainActivity.this.filePathCallback.onReceiveValue(null);
+                MainActivity.this.filePathCallback = null;
+                pendingExternalNav = false; // nothing actually opened
                 return false;
             }
             return true;

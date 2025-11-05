@@ -19,7 +19,7 @@ final class WebViewUtils {
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
         s.setAllowContentAccess(true);
-        s.setAllowFileAccess(false);
+        s.setAllowFileAccess(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) s.setSafeBrowsingEnabled(true);
 
