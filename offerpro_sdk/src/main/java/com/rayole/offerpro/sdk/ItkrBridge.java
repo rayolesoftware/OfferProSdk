@@ -35,9 +35,9 @@ final class ItkrBridge {
                 public void run() {
                     try {
                         activity.finish();
-                        Log.d("itkrBridge", "Offer wall closed successfully");
+//                        Log.d("itkrBridge", "Offer wall closed successfully");
                     } catch (Exception e) {
-                        Log.e("itkrBridge", "Failed to close offer wall", e);
+//                        Log.e("itkrBridge", "Failed to close offer wall", e);
                     }
                 }
             });
@@ -49,9 +49,9 @@ final class ItkrBridge {
     public String validateInstall(String packageName) throws Exception {
 //        if (packageName == null || packageName.trim().isEmpty()) return false;
 
-        Log.d("validateInstall","Here it's called "+packageName);
+//        Log.d("validateInstall","Here it's called "+packageName);
 
-        Log.d("validateInstall","Here it's called "+packageName);
+//        Log.d("validateInstall","Here it's called "+packageName);
         Map<String, Object> payload = new HashMap<>();
         payload.put("package_name", packageName);
 
@@ -60,14 +60,16 @@ final class ItkrBridge {
             payload.put("validated", true);
             String enc = Encryptor.encryptData(payload, encKey); //dynamic key
 
-            Log.d("validateInstall","Here it's called true");
+//            Log.d("validateInstall","Here it's called true : "+enc);
             return  enc;
 
         }else{
             payload.put("validated", false);
             String enc = Encryptor.encryptData(payload, encKey); //dynamic key
 
-            Log.d("validateInstall","Here it's called false");
+//            Log.d("validateInstall","Here it's called false : "+enc);
+//            Log.d("validateInstall","payload : "+payload);
+//            Log.d("validateInstall","encKey : "+encKey);
             return enc;
         }
     }
@@ -92,7 +94,7 @@ final class ItkrBridge {
      */
     @JavascriptInterface
     public String validateAppUsage(String packageName, String startTime, String endTime) throws Exception {
-        Log.d("validateAppUsages", "package=" + packageName + " start=" + startTime + " end=" + endTime);
+//        Log.d("validateAppUsages", "package=" + packageName + " start=" + startTime + " end=" + endTime);
 
         long fromMs = AppUsageUtils.parseMillis(startTime);
         long toMs   = AppUsageUtils.parseMillis(endTime);
@@ -106,7 +108,7 @@ final class ItkrBridge {
 //        long used = AppUsageUtils.getUsageMs(appCtx, packageName, fromMs, toMs);
         long used = AppUsageUtils.getUsageMs(appCtx, "com.rayolesoftware.tapnearn", System.currentTimeMillis() - 24L*60*60*1000L, System.currentTimeMillis());
 
-        Log.d("validateAppUsages", "usage_time_ms=" + used + " validated=" + (used > 0));
+//        Log.d("validateAppUsages", "usage_time_ms=" + used + " validated=" + (used > 0));
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("package_name", packageName);
@@ -140,7 +142,7 @@ final class ItkrBridge {
         Intent main = new Intent(Intent.ACTION_MAIN);
         main.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> infos = ctx.getPackageManager().queryIntentActivities(main, 0);
-        Log.d("packages" ,infos.toString());
+//        Log.d("packages" ,infos.toString());
         Set<String> pkgs = new HashSet<>();
         for (ResolveInfo ri : infos) {
             if (ri.activityInfo != null && ri.activityInfo.packageName != null) {

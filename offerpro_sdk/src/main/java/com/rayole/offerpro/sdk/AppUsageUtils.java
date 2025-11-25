@@ -39,7 +39,7 @@ final class AppUsageUtils {
                 return mode == AppOpsManager.MODE_ALLOWED;
             }
         } catch (Throwable t) {
-            Log.d("hasUsageAccess", "hasUsageAccess failed", t);
+//            Log.d("hasUsageAccess", "hasUsageAccess failed", t);
             return false;
         }
     }

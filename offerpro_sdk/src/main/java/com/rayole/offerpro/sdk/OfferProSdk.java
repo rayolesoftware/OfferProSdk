@@ -60,7 +60,7 @@ public final class OfferProSdk {
             payload.put("user_country", config.userCountry == null ? "" : config.userCountry);
             payload.put("sdk_version", sdkVersion);
 
-            Log.d("UserData", payload.toString());
+//            Log.d("UserData", payload.toString());
             String enc = Encryptor.encryptData(payload, config.encKey);
 
 //            String base = config.startUrl != null ? config.startUrl : "https://wall.offerpro.io";
@@ -70,7 +70,7 @@ public final class OfferProSdk {
                     + sep + "enc=" + Uri.encode(enc)
                     + "&app_id=" + config.appId;
 
-            Log.d("final url",finalUrl);
+//            Log.d("final url",finalUrl);
             Intent i = new Intent(activity, MainActivity.class);
             i.putExtra(MainActivity.EXTRA_START_URL, finalUrl);
             activity.startActivity(i);

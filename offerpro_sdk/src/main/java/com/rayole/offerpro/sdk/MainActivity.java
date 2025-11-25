@@ -114,13 +114,13 @@ public class MainActivity extends Activity {
 
     /** Only load if the URL we SHOULD be on (based on integrity) differs from what we last loaded. */
     private void loadWithIntegrityIfChanged() {
-//            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
-//            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
-//            if (!TextUtils.equals(desired, initialUrl)) {
-//                webView.loadUrl(desired);
-//                // lastLoadedUrl will be updated in onPageFinished
-//            }
-            webView.loadUrl(initialUrl);
+            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
+            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
+            if (!TextUtils.equals(desired, initialUrl)) {
+                webView.loadUrl(desired);
+                // lastLoadedUrl will be updated in onPageFinished
+            }
+//            webView.loadUrl(initialUrl);
     }
 
         /** Compose base + (?|&)blocked=<firstReason> (or no param if none). */
@@ -190,7 +190,7 @@ public class MainActivity extends Activity {
     private class BrowserClient extends WebViewClient {
         @Override public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            Log.d(TAG, "onPageStarted " + url);
+//            Log.d(TAG, "onPageStarted " + url);
         }
 
         @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
