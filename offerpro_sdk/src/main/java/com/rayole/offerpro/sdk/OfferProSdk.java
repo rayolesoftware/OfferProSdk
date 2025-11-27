@@ -76,10 +76,10 @@ public final class OfferProSdk {
 //            Log.d("final url",finalUrl);
             Intent i = new Intent(activity, MainActivity.class);
             i.putExtra(MainActivity.EXTRA_START_URL, finalUrl);
-            ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("link", finalUrl);
-            clipboard.setPrimaryClip(clip);
-            Toast.makeText(activity, finalUrl, Toast.LENGTH_LONG).show();
+//            ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+//            ClipData clip = ClipData.newPlainText("link", finalUrl);
+//            clipboard.setPrimaryClip(clip);
+//            Toast.makeText(activity, finalUrl, Toast.LENGTH_LONG).show();
             activity.startActivity(i);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to build encrypted URL: " + e.getMessage(), e);
