@@ -5,9 +5,7 @@ import static android.app.PendingIntent.getActivity;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
+
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -45,7 +43,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String initialUrl;         // first page, used ONLY on cold start
     private boolean firstLoadDone = false;
-    private boolean pendingFilePicker  = false; // ← add this
+    private boolean pendingFilePicker = false; // ← add this
     private String lastLoadedUrl = null;        // track what’s on screen
     // Used to skip reloads when returning from external intents (Play Store, file chooser, etc.)
     private boolean pendingExternalNav = false;
@@ -54,7 +52,8 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> filePathCallback;
 
     @SuppressLint("SetJavaScriptEnabled")
-    @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         CookieManager cm = CookieManager.getInstance();
@@ -65,6 +64,7 @@ public class MainActivity extends Activity {
 
         // Build the very first URL once; we won't keep reloading it on resume.
         String passed = getIntent() != null ? getIntent().getStringExtra(EXTRA_START_URL) : null;
+        Log.d("data", "Here is passed link :" + passed);
         initialUrl = (passed == null || passed.isEmpty()) ? BASE_URL_DEFAULT : passed;
 
         webView = new WebView(this);
@@ -86,26 +86,31 @@ public class MainActivity extends Activity {
 
         // Downloads
         webView.setDownloadListener(new DownloadListener() {
-            @Override public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
                 // Let the system handle it (browser / DownloadManager / Play Store / etc.)
-                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
-                catch (ActivityNotFoundException ignore) {}
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                } catch (ActivityNotFoundException ignore) {
+                }
             }
         });
 
         if (savedInstanceState != null) {
             // Restore the exact state (history, current page, form data, etc.)
             webView.restoreState(savedInstanceState);
-            firstLoadDone = true;
         } else {
             loadWithIntegrityIfChanged();
-            firstLoadDone = true;
         }
+        firstLoadDone = true;
     }
 
 
-    /** Don’t reload onResume – this preserves the page when returning from Play Store. */
-    @Override protected void onResume() {
+    /**
+     * Don’t reload onResume – this preserves the page when returning from Play Store.
+     */
+    @Override
+    protected void onResume() {
         super.onResume();
         // If we just returned from an external intent, DO NOT reload.
         if (pendingExternalNav) {
@@ -116,23 +121,25 @@ public class MainActivity extends Activity {
     }
 
 
-
-    /** Only load if the URL we SHOULD be on (based on integrity) differs from what we last loaded. */
+    /**
+     * Only load if the URL we SHOULD be on (based on integrity) differs from what we last loaded.
+     */
     private void loadWithIntegrityIfChanged() {
-            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
+        List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
+        if (reasons.isEmpty()) {
+            webView.loadUrl(initialUrl);
+        } else {
             String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
-            if (!TextUtils.equals(desired, initialUrl)) {
-                webView.loadUrl(desired);
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("link", desired);
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(this, desired, Toast.LENGTH_LONG).show();
-
-            }
-//            webView.loadUrl(initialUrl);
+            webView.loadUrl(desired);
+        }
+//        if (!TextUtils.equals(desired, initialUrl)) {
+//            webView.loadUrl(desired);
+//        }
     }
 
-        /** Compose base + (?|&)blocked=<firstReason> (or no param if none). */
+    /**
+     * Compose base + (?|&)blocked=<firstReason> (or no param if none).
+     */
     private static String buildBlockedUrl(String base, List<String> reasons) {
         if (reasons == null || reasons.isEmpty()) return base;
         String first = reasons.get(0);
@@ -141,12 +148,14 @@ public class MainActivity extends Activity {
     }
 
 
-    @Override protected void onSaveInstanceState(Bundle outState) {
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         webView.saveState(outState);
     }
 
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 10001) {
@@ -161,7 +170,7 @@ public class MainActivity extends Activity {
                         uris[i] = data.getClipData().getItemAt(i).getUri();
                     }
                 } else if (data.getData() != null) {
-                    uris = new Uri[]{ data.getData() };
+                    uris = new Uri[]{data.getData()};
                 }
             }
 
@@ -176,7 +185,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
             webView.goBack();
             return true;
@@ -184,9 +194,13 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
-    @Override protected void onDestroy() {
+    @Override
+    protected void onDestroy() {
         if (webView != null) {
-            try { ((ViewGroup) webView.getParent()).removeView(webView); } catch (Throwable ignore) {}
+            try {
+                ((ViewGroup) webView.getParent()).removeView(webView);
+            } catch (Throwable ignore) {
+            }
             webView.removeAllViews();
             webView.destroy();
             webView = null;
@@ -197,19 +211,22 @@ public class MainActivity extends Activity {
     // ---------------- Clients ----------------
 
     private class BrowserClient extends WebViewClient {
-        @Override public void onPageStarted(WebView view, String url, Bitmap favicon) {
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
 //            Log.d(TAG, "onPageStarted " + url);
         }
 
-        @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 return handleUrl(request.getUrl());
             }
             return false;
         }
 
-        @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
             return handleUrl(Uri.parse(url));
         }
 
@@ -244,16 +261,19 @@ public class MainActivity extends Activity {
 
     private class BrowserChrome extends WebChromeClient {
         // Support window.open / target=_blank
-        @Override public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+        @Override
+        public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
             // Create a temporary WebView to get the URL, then decide where to open it.
             WebView tmp = new WebView(view.getContext());
             tmp.setWebViewClient(new WebViewClient() {
-                @Override public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView v, String url) {
                     // Open new windows externally like a browser would
                     try {
                         pendingExternalNav = true; // ← ADD THIS
                         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    } catch (ActivityNotFoundException ignore) {}
+                    } catch (ActivityNotFoundException ignore) {
+                    }
                     return true;
                 }
             });
@@ -264,20 +284,23 @@ public class MainActivity extends Activity {
         }
 
         // HTML5 geolocation prompt → auto-grant or show your own UI
-        @Override public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+        @Override
+        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
             // you can gate this behind a user setting/permission if you want
             callback.invoke(origin, true, false);
         }
 
         // Camera/mic (WebRTC)
-        @Override public void onPermissionRequest(PermissionRequest request) {
+        @Override
+        public void onPermissionRequest(PermissionRequest request) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 request.grant(request.getResources()); // or filter these
             }
         }
 
         // File chooser for <input type="file">
-        @Override public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+        @Override
+        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
             // Close any previous pending callback to avoid OEM reload quirks
             if (MainActivity.this.filePathCallback != null) {
                 MainActivity.this.filePathCallback.onReceiveValue(null);
