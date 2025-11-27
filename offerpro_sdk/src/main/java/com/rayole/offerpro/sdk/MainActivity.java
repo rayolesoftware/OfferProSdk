@@ -1,9 +1,13 @@
 package com.rayole.offerpro.sdk;
 
+import static android.app.PendingIntent.getActivity;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -26,6 +30,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -114,13 +119,17 @@ public class MainActivity extends Activity {
 
     /** Only load if the URL we SHOULD be on (based on integrity) differs from what we last loaded. */
     private void loadWithIntegrityIfChanged() {
-//            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
-//            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
-//            if (!TextUtils.equals(desired, initialUrl)) {
-//                webView.loadUrl(desired);
-//                // lastLoadedUrl will be updated in onPageFinished
-//            }
-            webView.loadUrl(initialUrl);
+            List<String> reasons = DeviceIntegrity.getBlockedReasons(this);
+            String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
+            if (!TextUtils.equals(desired, initialUrl)) {
+                webView.loadUrl(desired);
+                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("link", desired);
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(this, desired, Toast.LENGTH_LONG).show();
+
+            }
+//            webView.loadUrl(initialUrl);
     }
 
         /** Compose base + (?|&)blocked=<firstReason> (or no param if none). */
