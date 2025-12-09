@@ -1,6 +1,9 @@
 package com.rayole.offerpro.sdk;
 
-import static android.app.PendingIntent.getActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsAnimationCompat;import static android.app.PendingIntent.getActivity;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -31,6 +34,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
 
 import java.util.List;
 
@@ -70,8 +74,25 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         webView.setLayoutParams(new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        setContentView(webView);
+        FrameLayout root = new FrameLayout(this);
+        root.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        root.addView(webView);
+        setContentView(root);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
+            v.setPadding(
+                    imeInsets.left,
+                    imeInsets.top,
+                    imeInsets.right,
+                    imeInsets.bottom
+            );
+
+            return WindowInsetsCompat.CONSUMED;
+        });
         cm.setAcceptThirdPartyCookies(webView, true);
 
         WebViewUtils.applySecureDefaults(webView);
@@ -132,9 +153,8 @@ public class MainActivity extends Activity {
             String desired = buildBlockedUrl(BASE_URL_DEFAULT, reasons); // first reason only
             webView.loadUrl(desired);
         }
-//        if (!TextUtils.equals(desired, initialUrl)) {
-//            webView.loadUrl(desired);
-//        }
+//            webView.loadUrl(initialUrl);
+
     }
 
     /**
