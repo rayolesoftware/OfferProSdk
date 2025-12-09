@@ -138,7 +138,7 @@ public final class OfferProSdk {
                 payload.put("user_country", config.userCountry == null ? "" : config.userCountry);
                 payload.put("sdk_version", sdkVersion);
 
-            Log.d("fetchMegaOffer", payload.toString());
+//            Log.d("fetchMegaOffer", payload.toString());
 
             String enc = Encryptor.encryptData(payload, config.encKey);
 
@@ -146,7 +146,7 @@ public final class OfferProSdk {
                         "https://server.offerpro.io/api/tasks/list_mega_games/"
                                 + "?ordering=-cpc&no_pagination=false&page=" + 1;
 
-                Log.d("fetchMegaOffer", urlStr);
+//                Log.d("fetchMegaOffer", urlStr);
 
                 URL url = new URL(urlStr);
                 conn = (HttpURLConnection) url.openConnection();
@@ -161,7 +161,7 @@ public final class OfferProSdk {
                 bodyJson.put("enc", enc);
                 bodyJson.put("app_id", config.appId);
 
-                Log.d("fetchMegaOffer", bodyJson.toString());
+//                Log.d("fetchMegaOffer", bodyJson.toString());
 
                 String bodyStr = bodyJson.toString();
                 OutputStream os = conn.getOutputStream();
@@ -174,7 +174,7 @@ public final class OfferProSdk {
                 os.close();
 
                 int code = conn.getResponseCode();
-                Log.d("fetchMegaOffer", String.valueOf(code));
+//                Log.d("fetchMegaOffer", String.valueOf(code));
 
                 if (code == HttpURLConnection.HTTP_OK) {
                     String responseStr = readStream(conn.getInputStream());
@@ -190,12 +190,12 @@ public final class OfferProSdk {
                     MegaOffer mega = MegaOffer.fromJson(first);
                     postResult(callback, mega);
                 } else {
-                    Log.d("error", String.valueOf(code));
+//                    Log.d("error", String.valueOf(code));
                     // non-200 -> treat as no mega offer
                     postResult(callback, null);
                 }
             } catch (Exception e)  {
-                Log.d("error", e.toString());
+//                Log.d("error", e.toString());
                 postResult(callback, null);
             }finally {
                 if (conn != null) {

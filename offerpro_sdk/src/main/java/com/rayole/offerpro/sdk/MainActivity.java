@@ -68,7 +68,7 @@ public class MainActivity extends Activity {
 
         // Build the very first URL once; we won't keep reloading it on resume.
         String passed = getIntent() != null ? getIntent().getStringExtra(EXTRA_START_URL) : null;
-        Log.d("data", "Here is passed link :" + passed);
+//        Log.d("data", "Here is passed link :" + passed);
         initialUrl = (passed == null || passed.isEmpty()) ? BASE_URL_DEFAULT : passed;
 
         webView = new WebView(this);
