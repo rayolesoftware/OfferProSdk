@@ -38,6 +38,7 @@ public final class OfferProSdk {
     private SdkConfig config;
     private String sdkVersion = "1.0.0";
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Handler linkOMagicHandler = new Handler(Looper.getMainLooper());
 
     private OfferProSdk() {}
 
@@ -52,6 +53,10 @@ public final class OfferProSdk {
 
     public interface MegaOfferCallback {
         void onResult(MegaOffer offer);
+    }
+
+    public interface LinkOMagicCallback {
+        void onResult(LinkOMagicData offer);
     }
 
     public synchronized void initialize(Context applicationContext, SdkConfig config) {
@@ -227,4 +232,116 @@ public final class OfferProSdk {
             throw new IllegalStateException("Failed to build encrypted URL: " + e.getMessage(), e);
         }
     }
+
+
+
+       // ✅ NEW: fetch MegaOffer from your backend
+    public void fetchLinkOMagic(final LinkOMagicCallback callback) {
+        if (!isInitialized()) throw new IllegalStateException("OfferProSdk not initialized");
+
+        // Run network on background thread (pseudo-code)
+        new Thread(() -> {
+        HttpURLConnection conn = null;
+            try {
+                // Build payload (everything except appId/startUrl)
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("device_id", config.deviceId == null ? "" : config.deviceId); //remove
+                payload.put("advertising_id", config.advertisingId == null ? "" : config.advertisingId);
+                payload.put("user_email", config.userEmail == null ? "" : config.userEmail);
+                payload.put("user_id", config.userId == null ? "" : config.userId);
+                payload.put("app_id", config.appId);
+                payload.put("user_country", config.userCountry == null ? "" : config.userCountry);
+                payload.put("sdk_version", sdkVersion);
+
+            Log.d("fetchLinkOMagic", payload.toString());
+
+            String enc = Encryptor.encryptData(payload, config.encKey);
+
+                String urlStr = "https://server.offerpro.io/api/tasks/list_article_offers/?ordering=-cpc&no_pagination=false&page="+1;
+//                        "https://server.offerpro.io/api/tasks/list_mega_games/"
+//                                + "?ordering=-cpc&no_pagination=false&page=" + 1;
+
+                Log.d("fetchLinkOMagic", urlStr);
+
+                URL url = new URL(urlStr);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json");
+
+                JSONObject bodyJson = new JSONObject();
+                bodyJson.put("enc", enc);
+                bodyJson.put("app_id", config.appId);
+                bodyJson.put("device_id", config.deviceId);
+
+                Log.d("fetchLinkOMagic", bodyJson.toString());
+
+                String bodyStr = bodyJson.toString();
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, StandardCharsets.UTF_8)
+                );
+                writer.write(bodyStr);
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int code = conn.getResponseCode();
+                Log.d("fetchLinkOMagic", String.valueOf(code));
+
+                if (code == HttpURLConnection.HTTP_OK) {
+                    String responseStr = readStream(conn.getInputStream());
+
+                    // Server returns a JSON array (same as your Dart code)
+                    JSONArray arr = new JSONArray(responseStr);
+                    if (arr.length() == 0) {
+                        linkOMagicPostResult(callback, null);
+                        return;
+                    }
+
+                    JSONObject first = arr.getJSONObject(0);
+                    LinkOMagicData mega = LinkOMagicData.fromJson(first);
+                    linkOMagicPostResult(callback, mega);
+                } else {
+                    Log.d("error", String.valueOf(code));
+                    // non-200 -> treat as no mega offer
+                    linkOMagicPostResult(callback, null);
+                }
+            } catch (Exception e)  {
+                Log.d("error", e.toString());
+                linkOMagicPostResult(callback, null);
+            }finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        }).start();
+    }
+
+    private void linkOMagicPostResult(final LinkOMagicCallback callback, final LinkOMagicData mega) {
+        linkOMagicHandler.post(() -> callback.onResult(mega));
+    }
+
+
+    /** Open the MegaWallWebView Activity with ?enc=<...>&app_id=<...> */
+    public void showLinkOMagic(Activity activity, String url) {
+        if (!isInitialized()) throw new IllegalStateException("OfferProSdk not initialized");
+
+        try {
+            if (url.trim().isEmpty()) return;
+
+            Intent intent = new Intent(activity, MainActivity.class);
+            intent.putExtra(MainActivity.EXTRA_START_URL, url);
+            activity.startActivity(intent);
+
+//            Log.d("final url",finalUrl);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to build encrypted URL: " + e.getMessage(), e);
+        }
+    }
+
+
 }
