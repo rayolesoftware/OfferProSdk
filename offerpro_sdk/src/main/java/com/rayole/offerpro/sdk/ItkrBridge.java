@@ -105,8 +105,8 @@ final class ItkrBridge {
             fromMs = now - 24L * 60L * 60L * 1000L;
         }
 
-//        long used = AppUsageUtils.getUsageMs(appCtx, packageName, fromMs, toMs);
-        long used = AppUsageUtils.getUsageMs(appCtx, "com.rayolesoftware.tapnearn", System.currentTimeMillis() - 24L*60*60*1000L, System.currentTimeMillis());
+        long used = AppUsageUtils.getUsageMs(appCtx, packageName, fromMs, toMs);
+//        long used = AppUsageUtils.getUsageMs(appCtx, "com.rayolesoftware.tapnearn", System.currentTimeMillis() - 24L*60*60*1000L, System.currentTimeMillis());
 
 //        Log.d("validateAppUsages", "usage_time_ms=" + used + " validated=" + (used > 0));
 
